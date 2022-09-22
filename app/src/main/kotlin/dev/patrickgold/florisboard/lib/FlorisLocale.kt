@@ -278,6 +278,8 @@ class FlorisLocale private constructor(val base: Locale) {
         }
     }
 
+    fun isLocaleCJK(): Boolean = this.language.startsWith("zh")
+
     /**
      * Generate a debug string representing this locale. Not to be confused
      * with [java.util.Locale.toString], which produces a locale tag. If such

@@ -551,7 +551,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
         }
         // TODO: maybe put this recurring condition in a function that determines CJK
-        if (subtypeManager.activeSubtype.primaryLocale.language.startsWith("zh") &&
+        if (subtypeManager.activeSubtype.primaryLocale.isLocaleCJK() &&
                 candidate != null) { /* Do nothing */ } else {
             editorInstance.commitText(KeyCode.SPACE.toChar().toString())
         }

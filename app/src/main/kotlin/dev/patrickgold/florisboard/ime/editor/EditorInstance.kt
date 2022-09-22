@@ -509,8 +509,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
          if (!(isActive || forceActive) || selection.isNotValid || selection.start <= 0 || text.isEmpty()) return false
          val textBefore = content.getTextBeforeCursor(1)
          val punctuationRule = nlpManager.getActivePunctuationRule()
-        // TODO: maybe put this recurring condition in a function that determines CJK
-         if (subtypeManager.activeSubtype.primaryLocale.language.startsWith("zh")) return false;
+         if (subtypeManager.activeSubtype.primaryLocale.isLocaleCJK()) return false;
          return textBefore.isNotEmpty() &&
              (punctuationRule.symbolsPrecedingPhantomSpace.contains(textBefore[textBefore.length - 1]) ||
                  textBefore[textBefore.length - 1].isLetterOrDigit()) &&
