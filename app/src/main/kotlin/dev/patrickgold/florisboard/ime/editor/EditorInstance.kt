@@ -509,7 +509,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
          if (!(isActive || forceActive) || selection.isNotValid || selection.start <= 0 || text.isEmpty()) return false
          val textBefore = content.getTextBeforeCursor(1)
          val punctuationRule = nlpManager.getActivePunctuationRule()
-         if (subtypeManager.activeSubtype.primaryLocale.isLocaleCJK()) return false;
+         if (subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace) return false;
          return textBefore.isNotEmpty() &&
              (punctuationRule.symbolsPrecedingPhantomSpace.contains(textBefore[textBefore.length - 1]) ||
                  textBefore[textBefore.length - 1].isLetterOrDigit()) &&
