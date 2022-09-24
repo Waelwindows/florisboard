@@ -41,6 +41,7 @@ import dev.patrickgold.florisboard.lib.android.AndroidVersion
 import dev.patrickgold.florisboard.lib.android.showShortToast
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.nlpManager
+import dev.patrickgold.florisboard.subtypeManager
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -54,6 +55,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     private val clipboardManager by context.clipboardManager()
     private val keyboardManager by context.keyboardManager()
     private val nlpManager by context.nlpManager()
+    private val subtypeManager by context.subtypeManager()
 
     private val activeState get() = keyboardManager.activeState
     val autoSpace = AutoSpaceState()
@@ -455,6 +457,16 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             sendDownUpKeyEvent(KeyEvent.KEYCODE_ENTER)
         } else {
             commitText("\n")
+        }
+    }
+
+    fun tryPerformEnterCommitRaw(): Boolean {
+        return if (subtypeManager.activeSubtype.primaryLocale.language.startsWith("zh") && activeContent.composing.length > 0) {
+            flogDebug { "ENTER: FINALIZECOMPOSINGTEXT ${activeContent.composingText}" }
+            finalizeComposingText(activeContent.composingText)
+        } else {
+            flogDebug { "ENTER: NOTHING" }
+            false
         }
     }
 
