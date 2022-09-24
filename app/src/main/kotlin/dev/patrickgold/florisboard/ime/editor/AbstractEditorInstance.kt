@@ -213,6 +213,7 @@ abstract class AbstractEditorInstance(context: Context) {
         textBeforeSelection: CharSequence,
         textAfterSelection: CharSequence,
         selectedText: CharSequence,
+        referencePrevComposing: EditorRange? = null,
     ): EditorContent {
         // Calculate offset and local selection
         val offset = selection.start - textBeforeSelection.length
@@ -233,7 +234,15 @@ abstract class AbstractEditorInstance(context: Context) {
             } else {
                 EditorRange.Unspecified
             }
-        val localComposing = if (determineComposingEnabled()) localCurrentWord else EditorRange.Unspecified
+        val localComposing = if (referencePrevComposing != null) {
+            // when old composing is passed on, use old composing.start; 
+            // unless it's invalid (expecting a (-1, -1) composing), then use invalid composing
+            if (referencePrevComposing.isValid) EditorRange(referencePrevComposing.start, localCurrentWord.end)
+            else referencePrevComposing
+        } else {
+            // when old composing is ignored, derive composing range from word boundary
+            if (determineComposingEnabled()) localCurrentWord else EditorRange.Unspecified
+        }
 
         // Build and publish text and content
         val text = buildString {
@@ -250,8 +259,12 @@ abstract class AbstractEditorInstance(context: Context) {
         textBeforeSelection: CharSequence = this.textBeforeSelection,
         textAfterSelection: CharSequence = this.textAfterSelection,
         selectedText: CharSequence = this.selectedText,
+        referencePrevComposing: EditorRange? = null,
     ): EditorContent {
-        return generateContent(editorInfo, selection, textBeforeSelection, textAfterSelection, selectedText)
+        return generateContent(
+            editorInfo, selection, textBeforeSelection, textAfterSelection, selectedText,
+            referencePrevComposing = referencePrevComposing,
+        )
     }
 
     private fun EditorContent.cursorCapsMode(): InputAttributes.CapsMode {
@@ -376,6 +389,7 @@ abstract class AbstractEditorInstance(context: Context) {
     private fun commitTextInternal(text: String): Boolean {
         val ic = currentInputConnection() ?: return false
         val content = activeContent
+        val composing = content.composing
         val selection = content.selection
         ic.beginBatchEdit()
         ic.finishComposingText()
@@ -390,6 +404,8 @@ abstract class AbstractEditorInstance(context: Context) {
                     append(text)
                 },
                 selectedText = "",
+                // TODO: only pass old composing range (to pin composing.start) with CJK
+                referencePrevComposing = if (composing.isValid) composing else EditorRange.cursor(selection.start),
             )
             expectedContentQueue.push(newContent)
             ic.commitText(text, 1)
@@ -415,6 +431,8 @@ abstract class AbstractEditorInstance(context: Context) {
                     append(text)
                 },
                 selectedText = "",
+                // expect -1, -1 as start, end after ic.finishComposingText()
+                referencePrevComposing = EditorRange.Unspecified,
             )
             expectedContentQueue.push(newContent)
             ic.setComposingText(text, 1)
