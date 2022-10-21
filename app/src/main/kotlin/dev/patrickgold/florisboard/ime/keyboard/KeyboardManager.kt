@@ -550,7 +550,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
             }
         }
-        if (subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
+        if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
                 candidate != null) { /* Do nothing */ } else {
             editorInstance.commitText(KeyCode.SPACE.toChar().toString())
         }
