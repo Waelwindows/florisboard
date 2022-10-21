@@ -364,6 +364,7 @@ abstract class AbstractEditorInstance(context: Context) {
         } else runBlocking {
             ic.beginBatchEdit()
             val newSelection = EditorRange.cursor(selection.start - rm + finalText.length)
+            val composing = content.composing
             val newContent = content.generateCopy(
                 selection = newSelection,
                 textBeforeSelection = buildString {
@@ -371,6 +372,8 @@ abstract class AbstractEditorInstance(context: Context) {
                     append(finalText)
                 },
                 selectedText = "",
+                // TODO: only pass old composing range (to pin composing.start) with CJK
+                referencePrevComposing = if (composing.isValid) composing else EditorRange.cursor(selection.start),
             )
             expectedContentQueue.push(newContent)
             // Utilize composing region to replace previous chars without using delete. This avoids flickering in the
@@ -463,10 +466,14 @@ abstract class AbstractEditorInstance(context: Context) {
                     TextType.CHARACTERS -> breakIterators.measureLastUChars(oldTextBeforeSelection, n, locale)
                     TextType.WORDS -> breakIterators.measureLastUWords(oldTextBeforeSelection, n, locale)
                 }
-                val newSelection = content.selection.translatedBy(-length)
+                val selection = content.selection
+                val newSelection = selection.translatedBy(-length)
+                val composing = content.composing
                 val newContent = content.generateCopy(
                     selection = newSelection,
                     textBeforeSelection = oldTextBeforeSelection.dropLast(length),
+                    // TODO: only pass old composing range (to pin composing.start) with CJK
+                    referencePrevComposing = if (composing.isValid) composing else EditorRange.cursor(selection.start),
                 )
                 expectedContentQueue.push(newContent)
                 ic.beginBatchEdit()
