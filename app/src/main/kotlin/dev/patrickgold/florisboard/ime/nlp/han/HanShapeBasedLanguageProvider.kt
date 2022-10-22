@@ -18,9 +18,12 @@ package dev.patrickgold.florisboard.ime.nlp.han
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.icu.text.BreakIterator
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
+import dev.patrickgold.florisboard.ime.editor.EditorRange
+import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
 import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -164,4 +167,29 @@ class HanShapeBasedLanguageProvider(context: Context) : SpellingProvider, Sugges
         // Here we have the chance to de-allocate memory and finish our work. However this might never be called if
         // the app process is killed (which will most likely always be the case).
     }
+
+    override suspend fun determineLocalComposing(subtype: Subtype, textBeforeSelection: CharSequence, breakIterators: BreakIteratorGroup): EditorRange {
+        return breakIterators.character(subtype.primaryLocale) {
+            it.setText(textBeforeSelection.toString())
+            val end = it.last()
+            var start = end
+            var next = it.previous()
+            while (next != BreakIterator.DONE) {
+                val sub = textBeforeSelection.substring(next, start)
+                flogDebug { "Inspecting if $sub is lower case letter" }
+                if (! sub.all { char -> char.isLetter() && char.isLowerCase() })
+                    break
+                start = next
+                next = it.previous()
+            }
+            if (start != end) {
+                flogDebug { "Determined $start - $end as composing: ${textBeforeSelection.substring(start, end)}" }
+                EditorRange(start, end)
+            } else {
+                flogDebug { "Determined Unspecified as composing" }
+                EditorRange.Unspecified
+            }
+        }
+    }
+
 }
