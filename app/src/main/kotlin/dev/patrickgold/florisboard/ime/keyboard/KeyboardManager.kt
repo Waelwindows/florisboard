@@ -533,6 +533,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     /**
+     * Handles a hardware [KeyEvent.KEYCODE_SPACE] event. Same as [handleSpace],
+     * but skips handling changing to characters keyboard and double space periods.
+     */
+    fun handleHardwareKeyboardSpace() {
+        val candidate = nlpManager.getAutoCommitCandidate()
+        candidate?.let { commitCandidate(it) }
+        // Skip handling changing to characters keyboard and double space periods
+        if (subtypeManager.activeSubtype.primaryLocale.isLocaleCJK() &&
+            candidate != null) { /* Do nothing */ } else {
+            editorInstance.commitText(KeyCode.SPACE.toChar().toString())
+        }
+    }
+
+    /**
      * Handles a [KeyCode.SPACE] event. Also handles the auto-correction of two space taps if
      * enabled by the user.
      */
@@ -778,6 +792,21 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.MOVE_START_OF_LINE,
             KeyCode.MOVE_END_OF_LINE -> handleArrow(data.code)
             else -> onInputKeyUp(data)
+        }
+    }
+
+    fun onHardwareKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        flogDebug { "ComposeInputView.onKeyDown with $keyCode" }
+        when (keyCode) {
+            KeyEvent.KEYCODE_SPACE -> {
+                handleHardwareKeyboardSpace()
+                return true
+            }
+            KeyEvent.KEYCODE_ENTER -> {
+                handleEnter()
+                return true
+            }
+            else -> return false
         }
     }
 
